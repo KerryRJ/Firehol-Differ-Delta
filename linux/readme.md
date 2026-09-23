@@ -36,7 +36,7 @@ the service. No build or separate setup step is required. Edit the configuration
 installation if needed:
 
 ```sh
-sudoedit /etc/firehol-differ-delta/config.toml
+sudo nano /etc/firehol-differ-delta/config.toml
 sudo systemctl restart firehol-differ-delta.service
 ```
 
