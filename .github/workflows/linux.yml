@@ -1,0 +1,75 @@
+name: Linux service
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build on Ubuntu 26.04
+    runs-on: ubuntu-26.04
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build Linux service
+        run: ./linux/build-deb.sh
+
+      - name: Validate Debian package
+        run: |
+          package=$(find target/debian -name '*.deb' -print -quit)
+          test -n "$package"
+          dpkg-deb --info "$package"
+          dpkg-deb --contents "$package"
+
+      - name: Upload Debian package
+        uses: actions/upload-artifact@v4
+        with:
+          name: firehol-differ-delta-ubuntu-26.04
+          path: target/debian/*.deb
+          if-no-files-found: error
+          retention-days: 30
+
+  windows:
+    name: Build Windows service
+    runs-on: windows-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build Windows service
+        run: cargo build --locked --release -p windows
+
+      - name: Install WiX Toolset
+        run: dotnet tool install --global wix --version 4.0.5
+
+      - name: Build Windows MSI
+        shell: pwsh
+        run: |
+          wix extension add WixToolset.UI.wixext/4.0.5
+          $version = (Select-String -Path Cargo.toml -Pattern '^version = "([^"]+)"').Matches.Groups[1].Value
+          wix build windows/wix/main.wxs `
+            -ext WixToolset.UI.wixext `
+            -d CargoTargetBinDir="$((Resolve-Path target/release).Path)" `
+            -d Version="$version" `
+            -o target/release/firehol-differ-delta-setup.msi
+
+      - name: Upload Windows service artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: firehol-differ-delta
+          path: |
+            target/release/firehol-differ-delta.exe
+            target/release/firehol-differ-delta-setup.msi
+          if-no-files-found: error
+          retention-days: 30

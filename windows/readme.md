@@ -1,0 +1,95 @@
+# windows
+
+`firehol-differ-delta` runs the FireHOL list scheduler as a Windows service.
+
+## Requirements
+
+- Windows
+- Administrator access for service installation
+- Rust toolchain and the MSVC build tools, if building from source
+- Network access to the configured FireHOL list URLs
+
+## Build
+
+Build on Windows from the repository root:
+
+```powershell
+cargo build --release -p windows
+```
+
+The executable is created at `target\\release\\firehol-differ-delta.exe`.
+
+## Create a WiX installer
+
+Install WiX Toolset v4 and its UI extension, then build the release binary and MSI
+from the repository root:
+
+```powershell
+cargo build --release -p windows
+wix extension add WixToolset.UI.wixext/4.0.5
+wix build windows\\wix\\main.wxs `
+  -ext WixToolset.UI.wixext `
+  -d CargoTargetBinDir="$((Resolve-Path .\\target\\release).Path)" `
+  -d Version="$(Select-String -Path Cargo.toml -Pattern '^version = \"([^\"]+)\"').Matches.Groups[1].Value" `
+  -o .\\target\\release\\firehol-differ-delta-setup.msi
+```
+
+Run the generated MSI as administrator. It installs and starts the
+`firehol-differ-delta` service, and stores configuration in
+`C:\\ProgramData\\firehol-differ-delta`.
+
+## Install
+
+Choose an installation directory and copy the executable there. The following example
+uses `C:\\Program Files\\firehol`:
+
+```powershell
+$InstallDir = 'C:\\Program Files\\firehol'
+New-Item -ItemType Directory -Force $InstallDir | Out-Null
+Copy-Item .\\target\\release\\firehol-differ-delta.exe $InstallDir
+```
+
+The service loads `config.toml` from `C:\\ProgramData\\firehol-differ-delta`:
+
+```powershell
+Copy-Item .\\config.toml C:\\ProgramData\\firehol-differ-delta\\config.toml
+```
+
+The TOML file must include these settings:
+
+```toml
+interval = "4h"
+path = "."
+l1_url = "https://iplists.firehol.org/files/firehol_level1.netset"
+l2_url = "https://iplists.firehol.org/files/firehol_level2.netset"
+```
+
+Edit `C:\\ProgramData\\firehol-differ-delta\\config.toml` before starting the service if needed.
+The `path` setting controls where generated data is written.
+
+Create and start the service from an elevated PowerShell prompt:
+
+```powershell
+$Binary = 'C:\\Program Files\\firehol\\firehol-differ-delta.exe'
+sc.exe create firehol-differ-delta binPath= '"C:\\Program Files\\firehol\\firehol-differ-delta.exe"' start= auto
+sc.exe description firehol-differ-delta 'FireHOL IP Deduplicator and Aggregator'
+sc.exe start firehol-differ-delta
+```
+
+Verify the service and inspect Windows Event Viewer or the service process logs if it
+stops unexpectedly:
+
+```powershell
+sc.exe query firehol-differ-delta
+```
+
+## Stop or uninstall
+
+```powershell
+sc.exe stop firehol-differ-delta
+sc.exe delete firehol-differ-delta
+Remove-Item 'C:\\Program Files\\firehol\\firehol-differ-delta.exe'
+```
+
+The WiX installer stops and removes the service during uninstall. The installed
+configuration and generated data under `C:\\ProgramData\\firehol` are retained.

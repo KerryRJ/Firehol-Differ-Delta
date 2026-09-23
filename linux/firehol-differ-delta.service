@@ -1,0 +1,17 @@
+[Unit]
+Description=FireHOL L1 and L2 Deduplicator and Aggregator
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/firehol-differ-delta
+DynamicUser=yes
+StateDirectory=firehol-differ-delta
+LogsDirectory=firehol-differ-delta
+WorkingDirectory=/etc/differ/delta
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target
