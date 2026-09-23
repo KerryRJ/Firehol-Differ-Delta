@@ -109,14 +109,14 @@ jobs:
           fi
 
       - name: Download Ubuntu package
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v8
         if: steps.release-tag.outputs.created == 'true'
         with:
           name: firehol-differ-delta-ubuntu-26.04
           path: dist/ubuntu
 
       - name: Download Windows packages
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v8
         if: steps.release-tag.outputs.created == 'true'
         with:
           name: firehol-differ-delta-windows-x64
