@@ -51,15 +51,16 @@ jobs:
         run: cargo build --locked --release -p windows
 
       - name: Install WiX Toolset
-        run: dotnet tool install --global wix --version 4.0.5
+        run: dotnet tool install --global wix --version 7.0.0
 
       - name: Build Windows MSI
         shell: pwsh
         run: |
-          wix extension add WixToolset.UI.wixext/4.0.5
-          wix extension add WixToolset.Util.wixext/4.0.5
+          wix extension add WixToolset.UI.wixext/7.0.0
+          wix extension add WixToolset.Util.wixext/7.0.0
           $version = (Select-String -Path Cargo.toml -Pattern '^version = "([^"]+)"').Matches.Groups[1].Value
           wix build windows/wix/main.wxs `
+            -acceptEula wix7 `
             -ext WixToolset.UI.wixext `
             -ext WixToolset.Util.wixext `
             -arch x64 `

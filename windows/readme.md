@@ -21,12 +21,12 @@ The executable is created at `target\\release\\firehol-differ-delta.exe`.
 
 ## Create a WiX installer
 
-Install WiX Toolset v4 and its UI extension, then build the release binary and MSI
+Install WiX Toolset v7 and its UI extension, then build the release binary and MSI
 from the repository root:
 
 ```powershell
 cargo build --release -p windows
-wix extension add WixToolset.UI.wixext/4.0.5
+wix extension add WixToolset.UI.wixext/7.0.0
 wix build windows\\wix\\main.wxs `
   -ext WixToolset.UI.wixext `
   -arch x64 `
