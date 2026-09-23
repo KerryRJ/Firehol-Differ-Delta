@@ -30,7 +30,7 @@ jobs:
           dpkg-deb --contents "$package"
 
       - name: Upload Debian package
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: firehol-differ-delta-ubuntu-26.04
           path: target/debian/*.deb
@@ -67,7 +67,7 @@ jobs:
             -o target/release/firehol-differ-delta-setup.msi
 
       - name: Upload Windows service artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: firehol-differ-delta
           path: |
