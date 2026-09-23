@@ -49,9 +49,6 @@
   destination for 32-bit versus 64-bit installers. Removal of these lines will
   cause installation errors.
 -->
-<!-- This installer is built for x64 Windows and must use native Program Files. -->
-<?define PlatformProgramFilesFolder = "ProgramFiles64Folder" ?>
-
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs" xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util" xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
 
     <Package Name="firehol-differ-delta" UpgradeCode="94535966-0ED3-4136-A7F9-30F6413ED56D" Manufacturer="Info-Overdrive" Language="1033" Codepage="1252" Version="$(var.Version)" InstallerVersion="450"><SummaryInformation Keywords="Installer" Description="Firehol L1 and L2 lists are dedpulicated, aggregated, and then exported as a delta difference file." Manufacturer="Info-Overdrive" />
@@ -72,6 +69,7 @@
 
             <ComponentRef Id="ServiceExecutable" />
             <ComponentRef Id="EventLogSource" />
+            <ComponentRef Id="FireholDataFolderPermissions" />
 
         </Feature>
 
@@ -132,7 +130,7 @@
         <!--<WixVariable Id='WixUIDialogBmp' Value='wix\Dialog.bmp'/>-->
 
 
-            <Directory Id="$(var.PlatformProgramFilesFolder)" Name="PFiles">
+            <StandardDirectory Id="ProgramFiles64Folder">
                 <Directory Id="APPLICATIONFOLDER" Name="firehol-differ-delta">
                     <!--
                       Disabling the license sidecar file in the installer is a two step process:
@@ -159,7 +157,7 @@
                         </RegistryKey>
                     </Component>
                 </Directory>
-            </Directory>
+            </StandardDirectory>
             <StandardDirectory Id="CommonAppDataFolder">
                 <Directory Id="FireholDataFolder" Name="firehol-differ-delta">
                     <Component Id="FireholDataFolderPermissions" Guid="*">
