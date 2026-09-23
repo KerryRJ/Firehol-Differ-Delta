@@ -21,11 +21,11 @@ install -d \
     "$STAGE_DIR/DEBIAN" \
     "$STAGE_DIR/usr/bin" \
     "$STAGE_DIR/usr/lib/systemd/system" \
-    "$STAGE_DIR/etc/differ/delta"
+    "$STAGE_DIR/etc/firehol-differ-delta"
 install -m 0755 "$REPO_ROOT/target/release/firehol-differ-delta" "$STAGE_DIR/usr/bin/firehol-differ-delta"
 install -m 0644 "$SCRIPT_DIR/firehol-differ-delta.service" "$STAGE_DIR/usr/lib/systemd/system/firehol-differ-delta.service"
 sed 's|^path = .*|path = "/var/lib/firehol-differ-delta"|' \
-    "$REPO_ROOT/config.toml" > "$STAGE_DIR/etc/differ/delta/config.toml"
+    "$REPO_ROOT/config.toml" > "$STAGE_DIR/etc/firehol-differ-delta/config.toml"
 
 cat > "$STAGE_DIR/DEBIAN/control" <<EOF
 Package: firehol-differ-delta
@@ -40,7 +40,7 @@ Description: FireHOL IP list scheduler service
 EOF
 
 cat > "$STAGE_DIR/DEBIAN/conffiles" <<'EOF'
-/etc/differ/delta/config.toml
+/etc/firehol-differ-delta/config.toml
 EOF
 
 cat > "$STAGE_DIR/DEBIAN/postinst" <<'EOF'

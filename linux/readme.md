@@ -29,19 +29,19 @@ wget \
 sudo apt install ./firehol-differ-delta-linux-amd64.deb
 ```
 
-The package installs the service binary, default `/etc/differ/delta/config.toml`, and
+The package installs the service binary, default `/etc/firehol-differ-delta/config.toml`, and
 systemd unit. It creates a dedicated `firehol-differ-delta` system account and the
 service-writable `/var/lib/firehol-differ-delta` data folder, then enables and starts
 the service. No build or separate setup step is required. Edit the configuration after
 installation if needed:
 
 ```sh
-sudoedit /etc/differ/delta/config.toml
+sudoedit /etc/firehol-differ-delta/config.toml
 sudo systemctl restart firehol-differ-delta.service
 ```
 
 The service runs as `firehol-differ-delta`, reads its configuration from
-`/etc/differ/delta/config.toml`, and writes generated data to
+`/etc/firehol-differ-delta/config.toml`, and writes generated data to
 `/var/lib/firehol-differ-delta`.
 
 Check its status and logs with:

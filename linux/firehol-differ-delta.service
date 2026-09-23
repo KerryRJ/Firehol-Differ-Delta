@@ -11,7 +11,7 @@ Group=firehol-differ-delta
 StateDirectory=firehol-differ-delta
 StateDirectoryMode=0750
 LogsDirectory=firehol-differ-delta
-WorkingDirectory=/etc/differ/delta
+WorkingDirectory=/etc/firehol-differ-delta
 Restart=on-failure
 RestartSec=5s
 
