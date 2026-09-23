@@ -24,7 +24,8 @@ install -d \
     "$STAGE_DIR/etc/differ/delta"
 install -m 0755 "$REPO_ROOT/target/release/firehol-differ-delta" "$STAGE_DIR/usr/bin/firehol-differ-delta"
 install -m 0644 "$SCRIPT_DIR/firehol-differ-delta.service" "$STAGE_DIR/usr/lib/systemd/system/firehol-differ-delta.service"
-install -m 0644 "$REPO_ROOT/config.toml" "$STAGE_DIR/etc/differ/delta/config.toml"
+sed 's|^path = .*|path = "/var/lib/firehol-differ-delta"|' \
+    "$REPO_ROOT/config.toml" > "$STAGE_DIR/etc/differ/delta/config.toml"
 
 cat > "$STAGE_DIR/DEBIAN/control" <<EOF
 Package: firehol-differ-delta
@@ -32,6 +33,7 @@ Version: $VERSION
 Section: net
 Priority: optional
 Architecture: $ARCH
+Depends: adduser, systemd
 Maintainer: Info-Overdrive
 Description: FireHOL IP list scheduler service
  Downloads and maintains the configured FireHOL IP lists as a systemd service.
@@ -44,6 +46,13 @@ EOF
 cat > "$STAGE_DIR/DEBIAN/postinst" <<'EOF'
 #!/bin/sh
 set -eu
+
+if ! getent passwd firehol-differ-delta >/dev/null; then
+    adduser --system --group --no-create-home firehol-differ-delta
+fi
+
+install -d -o firehol-differ-delta -g firehol-differ-delta -m 0750 \
+    /var/lib/firehol-differ-delta
 
 if command -v systemctl >/dev/null 2>&1; then
     systemctl daemon-reload

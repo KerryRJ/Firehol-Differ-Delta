@@ -6,8 +6,10 @@ Wants=network-online.target
 [Service]
 Type=simple
 ExecStart=/usr/bin/firehol-differ-delta
-DynamicUser=yes
+User=firehol-differ-delta
+Group=firehol-differ-delta
 StateDirectory=firehol-differ-delta
+StateDirectoryMode=0750
 LogsDirectory=firehol-differ-delta
 WorkingDirectory=/etc/differ/delta
 Restart=on-failure
