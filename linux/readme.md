@@ -24,7 +24,7 @@ To build an Ubuntu/Debian package from the repository on a Linux host:
 
 ```sh
 ./linux/build-deb.sh
-sudo apt install ./target/debian/firehol-differ-delta_0.1.0_$(dpkg --print-architecture).deb
+sudo apt install ./target/debian/firehol-differ-delta-linux-$(dpkg --print-architecture).deb
 ```
 
 The package installs the binary and systemd unit, creates the default configuration,

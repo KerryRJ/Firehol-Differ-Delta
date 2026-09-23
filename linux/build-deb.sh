@@ -6,7 +6,7 @@ REPO_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
 VERSION=$(sed -n 's/^version = "\([^"]*\)"/\1/p' "$REPO_ROOT/Cargo.toml" | head -n 1)
 ARCH=${DEB_HOST_ARCH:-$(dpkg --print-architecture)}
 OUTPUT_DIR=${OUTPUT_DIR:-"$REPO_ROOT/target/debian"}
-PACKAGE_NAME="firehol-differ-delta_${VERSION}_${ARCH}"
+PACKAGE_NAME="firehol-differ-delta-linux-${ARCH}"
 STAGE_DIR=$(mktemp -d)
 trap 'rm -rf "$STAGE_DIR"' EXIT
 

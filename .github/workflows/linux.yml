@@ -64,7 +64,7 @@ jobs:
             -ext WixToolset.Util.wixext `
             -d CargoTargetBinDir="$((Resolve-Path target/release).Path)" `
             -d Version="$version" `
-            -o target/release/firehol-differ-delta-setup.msi
+            -o target/release/firehol-differ-delta-windows-x64.msi
 
       - name: Upload Windows service artifacts
         uses: actions/upload-artifact@v6
@@ -72,7 +72,7 @@ jobs:
           name: firehol-differ-delta-windows-x64
           path: |
             target/release/firehol-differ-delta.exe
-            target/release/firehol-differ-delta-setup.msi
+            target/release/firehol-differ-delta-windows-x64.msi
           if-no-files-found: error
           retention-days: 30
 
@@ -108,26 +108,66 @@ jobs:
             echo "created=true" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Check whether release assets need publishing
+        id: publish-check
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="${{ steps.release-tag.outputs.tag }}"
+          if [ "${{ steps.release-tag.outputs.created }}" = true ]; then
+            publish=true
+          elif release=$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$tag" 2>/dev/null); then
+            assets=$(printf '%s' "$release" | jq -r '.assets[].name')
+            publish=false
+            for expected in firehol-differ-delta-linux-amd64.deb firehol-differ-delta.exe firehol-differ-delta-windows-x64.msi; do
+              if ! printf '%s\n' "$assets" | grep -Fxq "$expected"; then
+                publish=true
+                break
+              fi
+            done
+          else
+            publish=true
+          fi
+          echo "publish=$publish" >> "$GITHUB_OUTPUT"
+
       - name: Download Ubuntu package
         uses: actions/download-artifact@v8
-        if: steps.release-tag.outputs.created == 'true'
+        if: steps.publish-check.outputs.publish == 'true'
         with:
           name: firehol-differ-delta-ubuntu-26.04
           path: dist/ubuntu
 
       - name: Download Windows packages
         uses: actions/download-artifact@v8
-        if: steps.release-tag.outputs.created == 'true'
+        if: steps.publish-check.outputs.publish == 'true'
         with:
           name: firehol-differ-delta-windows-x64
           path: dist/windows
 
+      - name: Remove previous release assets
+        if: steps.publish-check.outputs.publish == 'true'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.release-tag.outputs.tag }}
+        run: |
+          release_id=$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG" --jq '.id' 2>/dev/null || true)
+          if [ -z "$release_id" ]; then
+            exit 0
+          fi
+
+          asset_ids=$(gh api "repos/$GITHUB_REPOSITORY/releases/$release_id/assets?per_page=100" --jq '.[] | select(.name == "firehol-differ-delta.exe" or .name == "firehol-differ-delta-setup.msi" or .name == "firehol-differ-delta-windows-x64.msi" or (.name | startswith("firehol-differ-delta_") and endswith(".deb")) or .name == "firehol-differ-delta-linux-amd64.deb") | .id')
+          while IFS= read -r asset_id; do
+            [ -z "$asset_id" ] || gh api --method DELETE "repos/$GITHUB_REPOSITORY/releases/assets/$asset_id"
+          done <<< "$asset_ids"
+
       - name: Publish release assets
         uses: softprops/action-gh-release@v3
-        if: steps.release-tag.outputs.created == 'true'
+        if: steps.publish-check.outputs.publish == 'true'
         with:
           tag_name: ${{ steps.release-tag.outputs.tag }}
           files: |
-            dist/ubuntu/*.deb
-            dist/windows/*.exe
-            dist/windows/*.msi
+            dist/ubuntu/firehol-differ-delta-linux-amd64.deb
+            dist/windows/firehol-differ-delta.exe
+            dist/windows/firehol-differ-delta-windows-x64.msi
