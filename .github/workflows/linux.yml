@@ -152,7 +152,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ steps.release-tag.outputs.tag }}
         run: |
-          release_id=$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG" --jq '.id' 2>/dev/null || true)
+          if release_id=$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG" --jq '.id' 2>/dev/null); then
+            :
+          else
+            release_id=""
+          fi
           if [ -z "$release_id" ]; then
             exit 0
           fi
