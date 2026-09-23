@@ -62,6 +62,7 @@ jobs:
           wix build windows/wix/main.wxs `
             -ext WixToolset.UI.wixext `
             -ext WixToolset.Util.wixext `
+            -arch x64 `
             -d CargoTargetBinDir="$((Resolve-Path target/release).Path)" `
             -d Version="$version" `
             -o target/release/firehol-differ-delta-windows-x64.msi

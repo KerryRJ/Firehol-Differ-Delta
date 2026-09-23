@@ -29,6 +29,7 @@ cargo build --release -p windows
 wix extension add WixToolset.UI.wixext/4.0.5
 wix build windows\\wix\\main.wxs `
   -ext WixToolset.UI.wixext `
+  -arch x64 `
   -d CargoTargetBinDir="$((Resolve-Path .\\target\\release).Path)" `
   -d Version="$(Select-String -Path Cargo.toml -Pattern '^version = \"([^\"]+)\"').Matches.Groups[1].Value" `
   -o .\\target\\release\\firehol-differ-delta-setup.msi
@@ -41,10 +42,10 @@ Run the generated MSI as administrator. It installs and starts the
 ## Install
 
 Choose an installation directory and copy the executable there. The following example
-uses `C:\\Program Files\\firehol`:
+uses `C:\\Program Files\\firehol-differ-delta`:
 
 ```powershell
-$InstallDir = 'C:\\Program Files\\firehol'
+$InstallDir = 'C:\\Program Files\\firehol-differ-delta'
 New-Item -ItemType Directory -Force $InstallDir | Out-Null
 Copy-Item .\\target\\release\\firehol-differ-delta.exe $InstallDir
 ```
@@ -70,8 +71,8 @@ The `path` setting controls where generated data is written.
 Create and start the service from an elevated PowerShell prompt:
 
 ```powershell
-$Binary = 'C:\\Program Files\\firehol\\firehol-differ-delta.exe'
-sc.exe create firehol-differ-delta binPath= '"C:\\Program Files\\firehol\\firehol-differ-delta.exe"' start= auto
+$Binary = 'C:\\Program Files\\firehol-differ-delta\\firehol-differ-delta.exe'
+sc.exe create firehol-differ-delta binPath= '"C:\\Program Files\\firehol-differ-delta\\firehol-differ-delta.exe"' start= auto
 sc.exe description firehol-differ-delta 'FireHOL IP Deduplicator and Aggregator'
 sc.exe start firehol-differ-delta
 ```
@@ -88,7 +89,7 @@ sc.exe query firehol-differ-delta
 ```powershell
 sc.exe stop firehol-differ-delta
 sc.exe delete firehol-differ-delta
-Remove-Item 'C:\\Program Files\\firehol\\firehol-differ-delta.exe'
+Remove-Item 'C:\\Program Files\\firehol-differ-delta\\firehol-differ-delta.exe'
 ```
 
 The WiX installer stops and removes the service during uninstall. The installed
