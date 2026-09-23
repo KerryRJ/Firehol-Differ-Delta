@@ -56,6 +56,7 @@ jobs:
       - name: Build Windows MSI
         shell: pwsh
         run: |
+          wix eula accept wix7
           wix extension add WixToolset.UI.wixext/7.0.0
           wix extension add WixToolset.Util.wixext/7.0.0
           $version = (Select-String -Path Cargo.toml -Pattern '^version = "([^"]+)"').Matches.Groups[1].Value
