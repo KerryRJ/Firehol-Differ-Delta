@@ -160,7 +160,7 @@
             </StandardDirectory>
             <StandardDirectory Id="CommonAppDataFolder">
                 <Directory Id="FireholDataFolder" Name="firehol-differ-delta">
-                    <Component Id="FireholDataFolderPermissions" Guid="*">
+                    <Component Id="FireholDataFolderPermissions" Guid="A31C5E87-6C42-4D9B-9A02-9E64A8F317B1">
                         <CreateFolder>
                             <util:PermissionEx User="SYSTEM" GenericRead="yes" GenericWrite="yes" GenericExecute="yes" Delete="yes" />
                         </CreateFolder>
