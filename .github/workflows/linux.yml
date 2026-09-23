@@ -75,3 +75,31 @@ jobs:
             target/release/firehol-differ-delta-setup.msi
           if-no-files-found: error
           retention-days: 30
+
+  release:
+    name: Publish GitHub release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [build, windows]
+    runs-on: ubuntu-26.04
+    permissions:
+      contents: write
+    steps:
+      - name: Download Ubuntu package
+        uses: actions/download-artifact@v6
+        with:
+          name: firehol-differ-delta-ubuntu-26.04
+          path: dist/ubuntu
+
+      - name: Download Windows packages
+        uses: actions/download-artifact@v6
+        with:
+          name: firehol-differ-delta-windows
+          path: dist/windows
+
+      - name: Publish release assets
+        uses: softprops/action-gh-release@v3
+        with:
+          files: |
+            dist/ubuntu/*.deb
+            dist/windows/*.exe
+            dist/windows/*.msi
