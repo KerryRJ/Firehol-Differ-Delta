@@ -143,7 +143,7 @@
                         <File Id="LicenseFile" DiskId="1" Source="windows\wix\License.rtf" KeyPath="yes" />
                     </Component>
 
-                    <Component Id="ServiceExecutable">
+                    <Component Id="ServiceExecutable" Guid="C2E9F1A4-7B63-4D08-9F35-61A0B7D42E8C">
                             <File Id="FireholWindowsExe" Name="firehol-differ-delta.exe" DiskId="1" Source="$(var.CargoTargetBinDir)\firehol-differ-delta.exe" KeyPath="yes" />
                             <File Id="FireholConfigFile" Name="config.toml" DiskId="1" Source="config.toml" />
                             <ServiceInstall Id="FireholServiceInstall" Name="firehol-differ-delta" DisplayName="FireHOL IP Deduplicator and Aggregator" Description="Downloads and aggregates FireHOL IP lists on a schedule." Type="ownProcess" Start="auto" ErrorControl="normal" Account="LocalSystem" />
