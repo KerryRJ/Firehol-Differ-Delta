@@ -32,7 +32,7 @@ Version: $VERSION
 Section: net
 Priority: optional
 Architecture: $ARCH
-Maintainer: Iodrive
+Maintainer: Info-Overdrive
 Description: FireHOL IP list scheduler service
  Downloads and maintains the configured FireHOL IP lists as a systemd service.
 EOF
