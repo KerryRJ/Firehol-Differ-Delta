@@ -72,7 +72,6 @@
 
             <ComponentRef Id="ServiceExecutable" />
             <ComponentRef Id="EventLogSource" />
-            <ComponentRef Id="FireholConfig" />
 
         </Feature>
 
@@ -148,12 +147,13 @@
 
                     <Component Id="ServiceExecutable">
                             <File Id="FireholWindowsExe" Name="firehol-differ-delta.exe" DiskId="1" Source="$(var.CargoTargetBinDir)\firehol-differ-delta.exe" KeyPath="yes" />
+                            <File Id="FireholConfigFile" Name="config.toml" DiskId="1" Source="config.toml" />
                             <ServiceInstall Id="FireholServiceInstall" Name="firehol-differ-delta" DisplayName="FireHOL IP Deduplicator and Aggregator" Description="Downloads and aggregates FireHOL IP lists on a schedule." Type="ownProcess" Start="auto" ErrorControl="normal" Account="LocalSystem" />
                             <ServiceControl Id="FireholServiceControl" Name="firehol-differ-delta" Start="install" Stop="both" Remove="uninstall" Wait="yes" />
                     </Component>
 
                     <Component Id="EventLogSource">
-                        <RegistryKey Root="HKLM" Key="SYSTEM\CurrentControlSet\Services\EventLog\Iodrive\firehol-differ-delta">
+                        <RegistryKey Root="HKLM" Key="SYSTEM\CurrentControlSet\Services\Application\Iodrive\firehol-differ-delta">
                             <RegistryValue Type="string" Name="EventMessageFile" Value="[SystemFolder]EventCreate.exe" KeyPath="yes" />
                             <RegistryValue Type="integer" Name="TypesSupported" Value="7" />
                         </RegistryKey>
@@ -162,11 +162,11 @@
             </Directory>
             <StandardDirectory Id="CommonAppDataFolder">
                 <Directory Id="FireholDataFolder" Name="firehol-differ-delta">
-                    <Component Id="FireholConfig">
-                            <CreateFolder>
-                                <util:PermissionEx User="SYSTEM" GenericRead="yes" GenericWrite="yes" GenericExecute="yes" Delete="yes" />
-                            </CreateFolder>
-                            <File Id="FireholConfigFile" Name="config.toml" DiskId="1" Source="config.toml" KeyPath="yes" />
+                    <Component Id="FireholDataFolderPermissions" Guid="*">
+                        <CreateFolder>
+                            <util:PermissionEx User="SYSTEM" GenericRead="yes" GenericWrite="yes" GenericExecute="yes" Delete="yes" />
+                        </CreateFolder>
+                        <RegistryValue Root="HKLM" Key="Software\Info-Overdrive\firehol-differ-delta" Name="DataFolder" Type="string" Value="[FireholDataFolder]" KeyPath="yes" />
                     </Component>
                 </Directory>
             </StandardDirectory>

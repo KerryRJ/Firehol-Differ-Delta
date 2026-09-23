@@ -16,7 +16,10 @@ mod service {
     use tokio_util::sync::CancellationToken;
     use windows_service::{
         define_windows_service,
-        service::{ServiceControl, ServiceControlAccept, ServiceExitCode, ServiceState, ServiceStatus, ServiceType},
+        service::{
+            ServiceControl, ServiceControlAccept, ServiceExitCode, ServiceState, ServiceStatus,
+            ServiceType,
+        },
         service_control_handler::{self, ServiceControlHandlerResult},
         service_dispatcher,
     };
@@ -24,10 +27,18 @@ mod service {
     const SERVICE_NAME: &str = "firehol-differ-delta";
     const SERVICE_TYPE: ServiceType = ServiceType::OWN_PROCESS;
 
+    fn install_dir() -> Result<PathBuf> {
+        let executable = env::current_exe().context("Failed to locate service executable")?;
+        executable
+            .parent()
+            .map(PathBuf::from)
+            .context("Service executable path has no parent directory")
+    }
+
     fn data_dir() -> PathBuf {
         env::var_os("PROGRAMDATA")
             .map(PathBuf::from)
-            .unwrap_or_else(|| PathBuf::from("."))
+            .unwrap_or_else(|| PathBuf::from(r"C:\ProgramData"))
             .join("firehol-differ-delta")
     }
 
@@ -50,8 +61,12 @@ mod service {
         }
 
         fn log(&self, record: &log::Record<'_>) {
-            use windows_sys::Win32::System::EventLog::{ReportEventW, EVENTLOG_ERROR_TYPE, EVENTLOG_INFORMATION_TYPE, EVENTLOG_WARNING_TYPE};
-            if !self.enabled(record.metadata()) { return; }
+            use windows_sys::Win32::System::EventLog::{
+                EVENTLOG_ERROR_TYPE, EVENTLOG_INFORMATION_TYPE, EVENTLOG_WARNING_TYPE, ReportEventW,
+            };
+            if !self.enabled(record.metadata()) {
+                return;
+            }
             let event_type = match record.level() {
                 log::Level::Error => EVENTLOG_ERROR_TYPE,
                 log::Level::Warn => EVENTLOG_WARNING_TYPE,
@@ -61,7 +76,17 @@ mod service {
             let wide: Vec<u16> = message.encode_utf16().chain(std::iter::once(0)).collect();
             let strings = [wide.as_ptr()];
             unsafe {
-                let _ = ReportEventW(self.source, event_type, 0, 0x1000, std::ptr::null_mut(), 1, 0, strings.as_ptr(), std::ptr::null());
+                let _ = ReportEventW(
+                    self.source,
+                    event_type,
+                    0,
+                    0x1000,
+                    std::ptr::null_mut(),
+                    1,
+                    0,
+                    strings.as_ptr(),
+                    std::ptr::null(),
+                );
             }
         }
 
@@ -70,10 +95,15 @@ mod service {
 
     fn init_logging() -> Result<()> {
         use windows_sys::Win32::System::EventLog::RegisterEventSourceW;
-        let source_name: Vec<u16> = "Iodrive\\firehol-differ-delta".encode_utf16().chain(std::iter::once(0)).collect();
+        let source_name: Vec<u16> = "Iodrive\\firehol-differ-delta"
+            .encode_utf16()
+            .chain(std::iter::once(0))
+            .collect();
         let source = unsafe { RegisterEventSourceW(std::ptr::null(), source_name.as_ptr()) };
         if source.is_null() {
-            anyhow::bail!("Failed to register Event Log source Iodrive\\firehol-differ-delta (is it installed?)");
+            anyhow::bail!(
+                "Failed to register Event Log source Iodrive\\firehol-differ-delta (is it installed?)"
+            );
         }
         log::set_boxed_logger(Box::new(EventLogger { source }))
             .context("Failed to initialize Windows Event Log logger")?;
@@ -82,7 +112,7 @@ mod service {
     }
     fn service_main(_arguments: Vec<OsString>) {
         if let Err(error) = run_service() {
-            eprintln!("Windows service stopped with an error: {error:#}");
+            log::error!("Service stopped with an error: {error:#}");
         }
     }
 
@@ -99,7 +129,18 @@ mod service {
             }
         };
         let status_handle = service_control_handler::register(SERVICE_NAME, event_handler)?;
-        init_logging()?;
+        if let Err(error) = init_logging() {
+            status_handle.set_service_status(ServiceStatus {
+                service_type: SERVICE_TYPE,
+                current_state: ServiceState::Stopped,
+                controls_accepted: ServiceControlAccept::empty(),
+                exit_code: ServiceExitCode::ServiceSpecific(1),
+                checkpoint: 0,
+                wait_hint: Duration::default(),
+                process_id: None,
+            })?;
+            return Err(error);
+        }
         status_handle.set_service_status(ServiceStatus {
             service_type: SERVICE_TYPE,
             current_state: ServiceState::StartPending,
@@ -111,12 +152,34 @@ mod service {
         })?;
 
         let runtime = tokio::runtime::Runtime::new().context("Failed to create Tokio runtime")?;
-        let data_dir = data_dir();
-        let config = runtime.block_on(load_config(&data_dir))?;
-        let data_dir = config.path.clone();
+        let executable_dir = install_dir()?;
+        let config = match runtime.block_on(load_config(&executable_dir)) {
+            Ok(config) => config,
+            Err(error) => {
+                log::error!("Failed to load configuration: {error:#}");
+                status_handle.set_service_status(ServiceStatus {
+                    service_type: SERVICE_TYPE,
+                    current_state: ServiceState::Stopped,
+                    controls_accepted: ServiceControlAccept::empty(),
+                    exit_code: ServiceExitCode::ServiceSpecific(1),
+                    checkpoint: 0,
+                    wait_hint: Duration::default(),
+                    process_id: None,
+                })?;
+                return Err(error);
+            }
+        };
+        let output_dir = if config.path.as_os_str().is_empty() || config.path == PathBuf::from(".")
+        {
+            data_dir()
+        } else if config.path.is_absolute() {
+            config.path.clone()
+        } else {
+            data_dir().join(&config.path)
+        };
         let cancellation = CancellationToken::new();
         let worker_cancellation = cancellation.clone();
-        let worker = runtime.spawn(run_scheduler(data_dir, config, worker_cancellation));
+        let worker = runtime.spawn(run_scheduler(output_dir, config, worker_cancellation));
 
         status_handle.set_service_status(ServiceStatus {
             service_type: SERVICE_TYPE,
@@ -128,9 +191,38 @@ mod service {
             process_id: None,
         })?;
 
-        let _ = shutdown_rx.recv();
-        cancellation.cancel();
-        let _ = runtime.block_on(worker);
+        let scheduler_result = loop {
+            match shutdown_rx.try_recv() {
+                Ok(()) | Err(mpsc::TryRecvError::Disconnected) => {
+                    cancellation.cancel();
+                    break runtime
+                        .block_on(worker)
+                        .context("Scheduler task failed")?
+                        .context("Scheduler failed during shutdown");
+                }
+                Err(mpsc::TryRecvError::Empty) => {}
+            }
+            if worker.is_finished() {
+                break runtime
+                    .block_on(worker)
+                    .context("Scheduler task failed")?
+                    .context("Scheduler stopped unexpectedly");
+            }
+            std::thread::sleep(Duration::from_millis(200));
+        };
+        if let Err(error) = scheduler_result {
+            log::error!("Scheduler failed: {error:#}");
+            status_handle.set_service_status(ServiceStatus {
+                service_type: SERVICE_TYPE,
+                current_state: ServiceState::Stopped,
+                controls_accepted: ServiceControlAccept::empty(),
+                exit_code: ServiceExitCode::ServiceSpecific(1),
+                checkpoint: 0,
+                wait_hint: Duration::default(),
+                process_id: None,
+            })?;
+            return Err(error);
+        }
         status_handle.set_service_status(ServiceStatus {
             service_type: SERVICE_TYPE,
             current_state: ServiceState::Stopped,

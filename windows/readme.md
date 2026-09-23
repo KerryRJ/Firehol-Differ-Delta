@@ -36,8 +36,8 @@ wix build windows\\wix\\main.wxs `
 ```
 
 Run the generated MSI as administrator. It installs and starts the
-`firehol-differ-delta` service, and stores configuration in
-`C:\\ProgramData\\firehol-differ-delta`.
+`firehol-differ-delta` service, installs `config.toml` beside the executable, and
+creates the writable data directory at `C:\\ProgramData\\firehol-differ-delta`.
 
 ## Install
 
@@ -50,10 +50,10 @@ New-Item -ItemType Directory -Force $InstallDir | Out-Null
 Copy-Item .\\target\\release\\firehol-differ-delta.exe $InstallDir
 ```
 
-The service loads `config.toml` from `C:\\ProgramData\\firehol-differ-delta`:
+The service loads `config.toml` from the same directory as its executable:
 
 ```powershell
-Copy-Item .\\config.toml C:\\ProgramData\\firehol-differ-delta\\config.toml
+Copy-Item .\\config.toml $InstallDir\\config.toml
 ```
 
 The TOML file must include these settings:
@@ -65,8 +65,11 @@ l1_url = "https://iplists.firehol.org/files/firehol_level1.netset"
 l2_url = "https://iplists.firehol.org/files/firehol_level2.netset"
 ```
 
-Edit `C:\\ProgramData\\firehol-differ-delta\\config.toml` before starting the service if needed.
-The `path` setting controls where generated data is written.
+Edit `$InstallDir\\config.toml` before starting the service if needed. The `path`
+setting controls where generated data is written. Its default value of `.` stores
+the ETags, downloaded netsets, and delta files in
+`C:\\ProgramData\\firehol-differ-delta`. A different relative path is resolved
+from that data directory.
 
 Create and start the service from an elevated PowerShell prompt:
 
@@ -93,4 +96,5 @@ Remove-Item 'C:\\Program Files\\firehol-differ-delta\\firehol-differ-delta.exe'
 ```
 
 The WiX installer stops and removes the service during uninstall. The installed
-configuration and generated data under `C:\\ProgramData\\firehol` are retained.
+configuration and generated data under `C:\\ProgramData\\firehol-differ-delta`
+are retained.
