@@ -3,7 +3,7 @@ set -eu
 
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 REPO_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
-VERSION=$(sed -n 's/^version = "\([^"]*\)"/\1/p' "$SCRIPT_DIR/Cargo.toml" | head -n 1)
+VERSION=$(sed -n 's/^version = "\([^"]*\)"/\1/p' "$REPO_ROOT/Cargo.toml" | head -n 1)
 ARCH=${DEB_HOST_ARCH:-$(dpkg --print-architecture)}
 OUTPUT_DIR=${OUTPUT_DIR:-"$REPO_ROOT/target/debian"}
 PACKAGE_NAME="firehol-differ-delta_${VERSION}_${ARCH}"
