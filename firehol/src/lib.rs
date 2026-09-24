@@ -33,6 +33,7 @@ pub async fn run_once(data_dir: &Path, config: &Config) -> Result<()> {
 
     if etags.l1.as_deref() == l1_etag.as_deref() && etags.l2.as_deref() == l2_etag.as_deref() {
         info!("ETags have not changed.");
+        purge_old_deltas(data_dir, config.purge).await?;
         return Ok(());
     }
 
@@ -56,7 +57,30 @@ pub async fn run_once(data_dir: &Path, config: &Config) -> Result<()> {
     etags.l1 = l1_etag;
     etags.l2 = l2_etag;
     etags.save(data_dir).await?;
+    purge_old_deltas(data_dir, config.purge).await?;
     info!("Elapsed time: {:.3} seconds", start.elapsed().as_secs_f64());
+    Ok(())
+}
+
+async fn purge_old_deltas(data_dir: &Path, interval: Option<std::time::Duration>) -> Result<()> {
+    let Some(interval) = interval else {
+        return Ok(());
+    };
+    let cutoff = std::time::SystemTime::now() - interval;
+    let mut entries = fs::read_dir(data_dir).await?;
+    while let Some(entry) = entries.next_entry().await? {
+        let name = entry.file_name();
+        if !name.to_string_lossy().starts_with("delta-") || !name.to_string_lossy().ends_with(".txt") {
+            continue;
+        }
+        let file_type = entry.file_type().await?;
+        if !file_type.is_file() {
+            continue;
+        }
+        if entry.metadata().await?.modified()? < cutoff {
+            fs::remove_file(entry.path()).await?;
+        }
+    }
     Ok(())
 }
 

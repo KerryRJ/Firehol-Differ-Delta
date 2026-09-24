@@ -59,14 +59,17 @@ Copy-Item .\\config.toml $InstallDir\\config.toml
 The TOML file must include these settings:
 
 ```toml
-interval = "4h"
+interval = "1h"
+purge = "7d"
 path = "."
 l1_url = "https://iplists.firehol.org/files/firehol_level1.netset"
 l2_url = "https://iplists.firehol.org/files/firehol_level2.netset"
 ```
 
-Edit `$InstallDir\\config.toml` before starting the service if needed. The `path`
-setting controls where generated data is written. Its default value of `.` stores
+`purge` accepts a duration such as `1h`, `7d`, or `2m`; it defaults to `7d`.
+Set it to `purge = "none"` to disable deletion. At the end of each run,
+delta files older than the selected interval are deleted. Edit `$InstallDir\\config.toml`
+before starting the service if needed. The `path` setting controls where generated data is written. Its default value of `.` stores
 the ETags, downloaded netsets, and delta files in
 `C:\\ProgramData\\firehol-differ-delta`. A different relative path is resolved
 from that data directory.

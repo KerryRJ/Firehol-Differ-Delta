@@ -11,6 +11,8 @@ const DEFAULT_L2_URL: &str = "https://iplists.firehol.org/files/firehol_level2.n
 pub struct Config {
     #[serde(default = "default_interval", with = "humantime_serde")]
     pub interval: Duration,
+    #[serde(default = "default_purge", with = "humantime_serde")]
+    pub purge: Option<Duration>,
     #[serde(default)]
     pub path: PathBuf,
     #[serde(default)]
@@ -23,6 +25,7 @@ impl Default for Config {
     fn default() -> Self {
         Self {
             interval: default_interval(),
+            purge: default_purge(),
             path: PathBuf::from("."),
             l1_url: DEFAULT_L1_URL.to_owned(),
             l2_url: DEFAULT_L2_URL.to_owned(),
@@ -30,8 +33,12 @@ impl Default for Config {
     }
 }
 
+fn default_purge() -> Option<Duration> {
+    Some(Duration::from_secs(7 * 24 * 60 * 60))
+}
+
 fn default_interval() -> Duration {
-    Duration::from_secs(4 * 60 * 60)
+    Duration::from_secs(60 * 60)
 }
 
 pub async fn load_config(data_dir: &Path) -> Result<Config> {
@@ -47,5 +54,6 @@ pub async fn load_config(data_dir: &Path) -> Result<Config> {
     let config: Config = toml::from_str(&config)
         .with_context(|| format!("Failed to parse {}", path.display()))?;
     anyhow::ensure!(!config.interval.is_zero(), "interval must be greater than zero");
+    anyhow::ensure!(config.purge.is_none_or(|purge| !purge.is_zero()), "purge must be greater than zero or none");
     Ok(config)
 }
