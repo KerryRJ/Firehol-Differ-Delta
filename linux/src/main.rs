@@ -1,3 +1,16 @@
+#[cfg(not(unix))]
+fn main() {
+    eprintln!("The Linux service must be built on a Unix platform.");
+}
+
+#[cfg(unix)]
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    service::run().await
+}
+
+#[cfg(unix)]
+mod service {
 use anyhow::{Context, Result};
 use firehol::{load_config, run_scheduler};
 use log::info;
@@ -18,7 +31,6 @@ fn init_logging() -> Result<()> {
     Ok(())
 }
 
-#[tokio::main]
 async fn main() -> Result<()> {
     init_logging()?;
     let mut reload = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::hangup())
@@ -74,4 +86,5 @@ async fn start_scheduler() -> Result<Scheduler> {
     let cancellation = CancellationToken::new();
     let task = tokio::spawn(run_scheduler(data_dir, config, cancellation.clone()));
     Ok(Scheduler { cancellation, task })
+}
 }
