@@ -31,7 +31,7 @@ fn init_logging() -> Result<()> {
     Ok(())
 }
 
-async fn main() -> Result<()> {
+pub async fn run() -> Result<()> {
     init_logging()?;
     let mut reload = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::hangup())
         .context("Failed to listen for reload signal")?;
