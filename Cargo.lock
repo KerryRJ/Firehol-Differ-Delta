@@ -419,7 +419,6 @@ dependencies = [
  "ipnet",
  "log",
  "reqwest",
- "ripset",
  "serde",
  "serde_json",
  "tokio",
@@ -1289,16 +1288,6 @@ dependencies = [
  "libc",
  "untrusted",
  "windows-sys 0.52.0",
-]
-
-[[package]]
-name = "ripset"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "23efe4a2266b7275fad5d2f86a4de91dc4fe32853721e0bd576619613910289d"
-dependencies = [
- "libc",
- "thiserror",
 ]
 
 [[package]]
