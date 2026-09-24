@@ -37,7 +37,7 @@ installation if needed:
 
 ```sh
 sudo nano /etc/firehol-differ-delta/config.toml
-sudo systemctl restart firehol-differ-delta.service
+sudo systemctl reload firehol-differ-delta
 ```
 
 The service runs as `firehol-differ-delta`, reads its configuration from
@@ -49,6 +49,14 @@ Check its status and logs with:
 ```sh
 systemctl status firehol-differ-delta.service
 journalctl -u firehol-differ-delta.service
+```
+
+Reload the service after changing its configuration. Reload sends `SIGHUP`; the
+service reads the new configuration and applies it to the scheduler without
+restarting the systemd service:
+
+```sh
+sudo systemctl reload firehol-differ-delta
 ```
 
 ## Stop or uninstall

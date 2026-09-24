@@ -16,5 +16,6 @@ path = "src/main.rs"
 anyhow = { workspace = true }
 env_logger = { workspace = true }
 firehol = { package = "firehol", path = "../firehol" }
-tokio = { workspace = true, features = ["macros", "rt-multi-thread", "signal"] }
+tokio = { workspace = true, features = ["macros", "rt-multi-thread", "signal", "signal-hook-registry", "rt"] }
 tokio-util = { workspace = true, features = ["rt"] }
+log = { workspace = true }

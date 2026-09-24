@@ -6,6 +6,7 @@ Wants=network-online.target
 [Service]
 Type=simple
 ExecStart=/usr/bin/firehol-differ-delta
+ExecReload=/bin/kill -HUP $MAINPID
 User=firehol-differ-delta
 Group=firehol-differ-delta
 StateDirectory=firehol-differ-delta

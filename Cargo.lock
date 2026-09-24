@@ -959,6 +959,7 @@ dependencies = [
  "anyhow",
  "env_logger",
  "firehol",
+ "log",
  "tokio",
  "tokio-util",
 ]
